@@ -1,0 +1,32 @@
+# Ignore virtual environment folder (venv)
+venv/
+.venv/
+
+# Ignore Python bytecode and cache
+__pycache__/
+*.py[cod]
+
+# Ignore system-specific or editor-specific files
+.DS_Store
+*.log
+*.swp
+*.swo
+
+# Ignore Python egg info
+*.egg-info/
+
+# Ignore compiled Cython or C extensions
+*.so
+*.pyd
+
+# Ignore environment variables or credentials (if applicable)
+.env
+.env.*
+
+# Ignore Jupyter Notebook checkpoints (if using Jupyter)
+.ipynb_checkpoints/
+
+# Ignore distribution / packaging files
+build/
+dist/
+*.egg
