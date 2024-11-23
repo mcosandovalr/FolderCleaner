@@ -86,7 +86,6 @@ def get_date(image_path):
 
 def process_img_file(file_name, source_path):
     data = re.split(r"[-_]", file_name)
-    built_date = ""
     if len(data) == 5:
         built_date = f"{data[1]}{data[2]}{data[3]}"
     else:
@@ -114,12 +113,8 @@ def process_trashed(file_name, source_path):
     return path
 
 
-
-
-
 def read_folder():
     source_path: Path = Path("X:\\Pictures")
-    # Definir los patrones de los nombres de imagenes
     # Define image name patterns
     patterns = [
         r"^IMG-\d{8}-WA\d{4}\.jpg$",
@@ -155,4 +150,4 @@ def read_folder():
 
 if __name__ == '__main__':
     read_folder()
-# 36867
+
