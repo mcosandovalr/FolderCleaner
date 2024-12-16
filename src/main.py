@@ -1,15 +1,11 @@
-import glob
-import json
 import os
-import re
 import shutil
 import sys
-from datetime import datetime
-from os.path import split
 from pathlib import Path
-from PIL import Image, ExifTags
+from PIL import Image
 from PIL.ExifTags import TAGS
 
+PICTURES_FOLDER = "X:\\Pictures"
 
 def check_folder(path: Path):
     try:
@@ -61,19 +57,14 @@ def get_date(image_path):
             if not exif_data:
                 return None
 
-            date_tags = {}
-
-            for tag_id, value in exif_data.items():
-                tag_name = ExifTags.TAGS.get(tag_id, tag_id)
-
-                if "date" in tag_name.lower():
-                    date_tags[tag_name] = value
-
-            if date_tags:
-                print(f"founded {len(date_tags)} tag(s) with the string 'date' in them.")
-                if "DateTime" in date_tags:
-                    return date_tags["DateTime"]
-
+            # counter = 1
+            for tag_id in exif_data:
+                tag_name  = TAGS.get(tag_id, tag_id)
+                tag_value = exif_data.get(tag_id)
+                # print(f"{counter}.- {tag_id} - {tag_name}: {tag_value}")
+                # counter += 1
+                if "date" in str(tag_name).lower() or tag_id == 306: # not really sure about using the id
+                    return tag_value
     except FileNotFoundError:
         print(f"Error: El archivo '{image_path}' no fue encontrado.")
     except OSError:
@@ -85,15 +76,16 @@ def get_date(image_path):
 
 
 def process_img_file(file_name, source_path):
-    data = re.split(r"[-_]", file_name)
-    if len(data) == 5:
-        built_date = f"{data[1]}{data[2]}{data[3]}"
-    else:
-        built_date = data[1]
-    path = Path(break_date(built_date, source_path))
+    data = file_name.split("_")
+
+    # TODO: add case for IMG_20240331_002002597_HDR or this thing will break again
+    # if len(data) > 3:
+    #     return Path(f"{source_path}\\{data[1]} {data[2]}")
+    path = Path(break_date(data[1], source_path))
     return path
 
 
+# this is now useless
 def process_dsc_file(file_name, source_path):
     creation_date = get_date(Path(f"{source_path}\\{file_name}"))
     print(f"Creation date: {creation_date}")
@@ -107,45 +99,46 @@ def process_dsc_file(file_name, source_path):
     return path
 
 
-def process_trashed(file_name, source_path):
-    data = file_name.split("_")
-    path = Path(break_date(data[1], source_path))
+def process_image(file_name, source_path):
+    # read EXIF data to get the date
+    creation_date = get_date(Path(f"{source_path}\\{file_name}"))
+    # if there's no date data get it from the file name
+    if not creation_date:
+                
+        img_b = ('img', 'b')
+        # revisar si el nombre del archivo comienza con IMG o DSC (no moar DSC)
+        if file_name.lower().startswith(img_b):
+            destination_path = process_img_file(file_name, source_path)
+        else:
+            # leave file in folder for manual review
+            return
+    print(f"Creation date: {creation_date}")
+    date_section = str(creation_date).split(" ")
+    data = str(date_section[0]).split(":")
+
+    year = data[0]
+    month = data[1]
+
+    path = cal_dic(month, year, source_path)
     return path
 
 
 def read_folder():
-    source_path: Path = Path("X:\\Pictures")
-    # Define image name patterns
-    patterns = [
-        r"^IMG-\d{8}-WA\d{4}\.jpg$",
-        r"^IMG_\d{8}\.jpg$",
-        r"^B\d{3}_?(\d{8})_\d{6}_\d{3}\.jpg$",
-        r"^IMG_(\d{4}_\d{2}_\d{2})\.jpg$",
-        r"^\.trashed-\d+-IMG_(\d{8})_\d{9}_HDR$"
-    ]
-    ext = ('.png', '.jpg', '.jpeg','.mp4')
-    img_b = ('img','b')
-    trashed = '.trashed'
+    source_path: Path = Path(PICTURES_FOLDER)
+    # files = glob.glob(f"{folder_path}/*.*")
+    ext = ('.png', '.jpg', '.mp4')
     for file_name in os.listdir(source_path):
         if str(file_name).lower().endswith(ext):
             print(f"{file_name}")
             destination_path = ""
-            # revisar si el nombre del archivo comienza con IMG o DSC
-            if file_name.lower().startswith(img_b):
-                destination_path = process_img_file(file_name, source_path)
-            elif file_name.lower().startswith(str('dsc')):
-                destination_path = process_dsc_file(file_name, source_path)
-            elif file_name.lower().startswith(trashed):
-                destination_path = process_trashed(file_name, source_path)
-            else:
-                continue
-            # if destination_path is not None:
-            # check if folder exists
-            check_folder(destination_path)
-            # move the file into the folder
-            move_file_to_folder(source_path, destination_path, file_name)
+            destination_path = process_image(file_name, source_path)
+            if destination_path is not None:
+                # check if folder exists
+                check_folder(destination_path)
+                # move the file into the folder
+                move_file_to_folder(source_path, destination_path, file_name)
 
-    print("Images moved.   Bye...")
+    print(" Bye...")
 
 
 if __name__ == '__main__':
